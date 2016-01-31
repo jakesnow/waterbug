@@ -1,6 +1,6 @@
 # Waterbug
 
-Waterbug is a command-line tool for accessing water-usage data from the [San Francisco Public Utilities Commission](http://www.sfwater.org/).  You'll need an [existing account](https://myaccount.sfwater.org/).
+Waterbug is a command-line tool for accessing water-usage data from the [San Francisco Public Utilities Commission](http://www.sfwater.org/).  You'll need an [existing account](https://myaccount.sfwater.org/). This works for me, but I haven't tried it with other accounts, other operating systems, etc.  Your mileage may vary, caveat emptor.  Pull requests welcome.
 
 ## Overview
 
