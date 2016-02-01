@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 '''
-Waterbug 
+Waterbug
 
 Waterbug is a command-line tool for accessing water-usage data from 
 San Francisco Public Utilities Commission.  By default, the script returns
@@ -150,9 +150,6 @@ def water_usage(userid, password, start_datetime, end_datetime):
     start_day = datetime_to_day(start_datetime)
     end_day = datetime_to_day(end_datetime)
 
-    # print "Start: " + start_day
-    # print "End: " + end_day
-
     with requests.Session() as c:
 
         waterbill_url = "https://myaccount.sfwater.org/~~~\
@@ -161,29 +158,37 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
         soup=BeautifulSoup(r.content, "html.parser")
 
+        # Extract values from page that must be in the login POST
         VIEWSTATE=soup.find(id="__VIEWSTATE")['value']
         VIEWSTATEGENERATOR=soup.find(id="__VIEWSTATEGENERATOR")['value']
         EVENTVALIDATION=soup.find(id="__EVENTVALIDATION")['value']
 
+        # Populate login POST
         login_data = {"__VIEWSTATE":VIEWSTATE,
             "__VIEWSTATEGENERATOR":VIEWSTATEGENERATOR,
             "__EVENTVALIDATION":EVENTVALIDATION,
             "tb_USER_ID":userid,
             "tb_USER_PSWD":password,
              "btn_SIGN_IN_BUTTON":"Sign in"}
+        
+        # Submit login
         login = c.post(waterbill_url, data = login_data)
+        
+        # Raise exception if login credentals fail
         if "<h2>Sign In Failure</h2>" in login.content:
             raise ValueError('Sign in failure')
 
         my_account = c.get("https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ")   
         newsoup = BeautifulSoup(my_account.content, "html.parser")
         
+        # Extract values from page that must be in the data-request POST
         VIEWSTATE = newsoup.find(id="__VIEWSTATE")['value']
         VIEWSTATEGENERATOR = newsoup.find(id="__VIEWSTATEGENERATOR")['value']
         EVENTVALIDATION = newsoup.find(id="__EVENTVALIDATION")['value']
         TSM_HiddenField = newsoup.find(id="_TSM_HiddenField_")['value']
         xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
 
+        # Populate data request POST
         xls_data = {"__VIEWSTATE":VIEWSTATE,
             "__VIEWSTATEGENERATOR":VIEWSTATEGENERATOR,
             "__EVENTVALIDATION":EVENTVALIDATION,
@@ -213,12 +218,7 @@ if __name__ == "__main__":
         sys.exit()
     
     mode = output_mode(arguments)
-
-    # print arguments
     start_datetime, end_datetime = init(arguments)
-    # print "Start: %s" % start_datetime
-    # print "End: %s" % end_datetime
-
     userid, password = get_credentials()
 
     try:
@@ -227,10 +227,6 @@ if __name__ == "__main__":
         loginerror()
     else:
         output(water, mode, start_datetime, end_datetime)
-
-#    water = water_usage(userid, password, start_datetime, end_datetime)
-#    output(water, mode, start_datetime, end_datetime)
-
 
 
 
