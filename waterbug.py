@@ -3,7 +3,7 @@
 '''
 Waterbug
 
-Waterbug is a command-line tool for accessing water-usage data from 
+Waterbug is a command-line tool for accessing water-usage data from
 San Francisco Public Utilities Commission.  By default, the script returns
 the most recent ten days of usage.  Default output is text to the terminal.
 
@@ -26,13 +26,6 @@ Options:
     -x, --xls         Output xls file
     -g, --graph       Output termgraph
 '''
-
-__title__ = 'waterbug'
-__version__ = '0.1'
-__author__ = 'Jake Snow'
-__license__ = 'MIT'
-__copyright__ = 'Copyright 2016 Jacob A. Snow'
-
 import sys
 import getpass
 
@@ -47,25 +40,29 @@ from docopt import docopt
 
 from termgraph import main as graph
 
-# USERID = "[SF WATER USERNAME]"
-# PASSWORD = "[SF WATER PASSWORD]"
+__title__ = 'waterbug'
+__version__ = '0.1'
+__author__ = 'Jake Snow'
+__license__ = 'MIT'
+__copyright__ = 'Copyright 2016 Jacob A. Snow'
 
 def get_credentials():
     '''
-    If credentials are hard-coded constants, return them.  Otherwise 
+    If credentials are hard-coded constants, return them.  Otherwise
     prompt the user.
     '''
     try:
-        userid = USERID
-    except (NameError):
-        userid = raw_input("Please enter your SF Water login: ")
+        login = USERID
+    except NameError:
+        login = raw_input("Please enter your SF Water login: ")
     try:
-        password = PASSWORD
-    except (NameError):
-        password = getpass.getpass("Please enter your SF Water password: ")
-    return (userid, password)
+        passw = PASSWORD
+    except NameError:
+        passw = getpass.getpass("Please enter your SF Water password: ")
+    return (login, passw)
 
 def loginerror():
+    '''Print formatted login-error notification'''
     print "\n====================================="
     print "Your login or password was incorrect."
     print "====================================="
@@ -75,49 +72,51 @@ def datetime_to_day(date_time):
     day = "%s/%s/%s" % (date_time.month, date_time.day, date_time.year)
     return day
 
-def fix_future_date(datetime):
-    '''If start date or end date is in the future, put them in last year.'''
-    if datetime > datetime.today():
-        previous_year = datetime - relativedelta(years=1)
+def fix_future_date(date_time):
+    '''If date_time is in the future, move it to previous year.'''
+    if date_time > datetime.today():
+        previous_year = date_time - relativedelta(years=1)
         return previous_year
     else:
-        return datetime
+        return date_time
 
-def output_mode(arguments):
-    if arguments['--graph']:
+def output_mode(args):
+    '''Identify login mode from args dictionary.'''
+    if args['--graph']:
         return "graph"
-    elif arguments['--xls']:
+    elif args['--xls']:
         return "xls"
     else:
         return "text"
 
 def terminal_output_header(start, end):
+    '''Print header for terminal output.'''
     print "\nWater Use in Gallons, %s through %s:" % (start, end)
     print "======================================================"
 
-def output(water, mode, start_datetime, end_datetime):
-    start = datetime_to_day(start_datetime)
-    end = datetime_to_day(end_datetime)
-    if mode == "text":
+def render_output(water_use, output, start_date, end_date):
+    '''Output to terminal (text or termgraph) or xls depending on output mode.'''
+    start = datetime_to_day(start_date)
+    end = datetime_to_day(end_date)
+    if output == "text":
         terminal_output_header(start, end)
-        for day_use_pair in water:
+        for day_use_pair in water_use:
             print day_use_pair
-    elif mode == "graph":
+    elif output == "graph":
         terminal_output_header(start, end)
-        graph(water)
-        # print water
-    elif mode == "xls":
+        graph(water_use)
+    elif output == "xls":
         xls_file = "Date\tConsumption in GALLONS\n"
-        for day_use_pair in water:
+        for day_use_pair in water_use:
             xls_file += day_use_pair + "\n"
         write_xls = open("water_usage.xls", 'wb')
         write_xls.write(xls_file.encode("utf-8"))
         write_xls.close()
 
-def init(arguments):
+def get_daterange(arguments):
     '''
-    Pull start and end date in from command line arguments, depending on 
-    whether range or recent is specified in arguments.  Default is to show the 
+    Pull start and end date in from command line arguments, depending on
+    whether range or recent is specified in arguments.  Default is to show the
     last ten days of usage.
     '''
     if arguments['range']:
@@ -152,82 +151,94 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
     with requests.Session() as c:
 
-        waterbill_url = "https://myaccount.sfwater.org/~~~\
-            QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
+        waterbill_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
         r = c.get("https://myaccount.sfwater.org")
 
-        soup=BeautifulSoup(r.content, "html.parser")
+        soup = BeautifulSoup(r.content, "html.parser")
 
         # Extract values from page that must be in the login POST
-        VIEWSTATE=soup.find(id="__VIEWSTATE")['value']
-        VIEWSTATEGENERATOR=soup.find(id="__VIEWSTATEGENERATOR")['value']
-        EVENTVALIDATION=soup.find(id="__EVENTVALIDATION")['value']
+        viewstate_login = soup.find(id="__VIEWSTATE")['value']
+        viewstategenerator_login = soup.find(id="__VIEWSTATEGENERATOR")['value']
+        eventvalidation_login = soup.find(id="__EVENTVALIDATION")['value']
 
         # Populate login POST
-        login_data = {"__VIEWSTATE":VIEWSTATE,
-            "__VIEWSTATEGENERATOR":VIEWSTATEGENERATOR,
-            "__EVENTVALIDATION":EVENTVALIDATION,
-            "tb_USER_ID":userid,
-            "tb_USER_PSWD":password,
-             "btn_SIGN_IN_BUTTON":"Sign in"}
-        
+        login_data = {"__VIEWSTATE":viewstate_login,
+                      "__VIEWSTATEGENERATOR":viewstategenerator_login,
+                      "__EVENTVALIDATION":eventvalidation_login,
+                      "tb_USER_ID":userid,
+                      "tb_USER_PSWD":password,
+                      "btn_SIGN_IN_BUTTON":"Sign in"}
+
         # Submit login
-        login = c.post(waterbill_url, data = login_data)
-        
+        login = c.post(waterbill_url, data=login_data)
+
         # Raise exception if login credentals fail
         if "<h2>Sign In Failure</h2>" in login.content:
-            raise ValueError('Sign in failure')
+            loginerror()
+            sys.exit()
 
-        my_account = c.get("https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ")   
+        account_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ"
+
+        my_account = c.get(account_url)
+
+        # print my_account.content
+
         newsoup = BeautifulSoup(my_account.content, "html.parser")
-        
+
         # Extract values from page that must be in the data-request POST
-        VIEWSTATE = newsoup.find(id="__VIEWSTATE")['value']
-        VIEWSTATEGENERATOR = newsoup.find(id="__VIEWSTATEGENERATOR")['value']
-        EVENTVALIDATION = newsoup.find(id="__EVENTVALIDATION")['value']
-        TSM_HiddenField = newsoup.find(id="_TSM_HiddenField_")['value']
+        viewstate_data = newsoup.find(id="__VIEWSTATE")['value']
+        viewstategenerator_data = newsoup.find(id="__VIEWSTATEGENERATOR")['value']
+        eventvalidation_data = newsoup.find(id="__EVENTVALIDATION")['value']
+        tsm_hiddenfield = newsoup.find(id="_TSM_HiddenField_")['value']
+
         xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
 
         # Populate data request POST
-        xls_data = {"__VIEWSTATE":VIEWSTATE,
-            "__VIEWSTATEGENERATOR":VIEWSTATEGENERATOR,
-            "__EVENTVALIDATION":EVENTVALIDATION,
-            "_TSM_HiddenField_":TSM_HiddenField,
-            "SD":start_day,
-            "tb_DAILY_USE":"Daily Use",
-            "dl_UOM":"GALLONS",
-            "img_EXCEL_DOWNLOAD_IMAGE.x":"12",
-            "img_EXCEL_DOWNLOAD_IMAGE.y":"11",
-            "ED":end_day}
+        xls_data = {"__VIEWSTATE":viewstate_data,
+                    "__VIEWSTATEGENERATOR":viewstategenerator_data,
+                    "__EVENTVALIDATION":eventvalidation_data,
+                    "_TSM_HiddenField_":tsm_hiddenfield,
+                    "SD":start_day,
+                    "tb_DAILY_USE":"Daily Use",
+                    "dl_UOM":"GALLONS",
+                    "img_EXCEL_DOWNLOAD_IMAGE.x":"12",
+                    "img_EXCEL_DOWNLOAD_IMAGE.y":"11",
+                    "ED":end_day}
 
-        xls_file = c.post(xls_url, data = xls_data, 
-            headers = {"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"})
+        xls_file = c.post(
+            xls_url,
+            data=xls_data,
+            headers={"Accept":"text/html,application/xhtml+xml,application\
+                        /xml;q=0.9,image/webp,*/*;q=0.8"})
+
         usage_list = xls_file.content.split("\n")
-        
+
         # Pop off first line, reading: "Date   Consumption in GALLONS"
-        usage_list.pop(0) 
-        
+        usage_list.pop(0)
+
         return usage_list
+
+def return_version(args):
+    '''If user requests version, return version and exit.'''
+    if args['--version']:
+        print "%s v. %s" % (__title__, __version__)
+        sys.exit()
+
+def main(args):
+    '''Collect and return requested water-usage data.'''
+
+    mode = output_mode(args)
+    start_datetime, end_datetime = get_daterange(args)
+    userid, password = get_credentials()
+
+    water = water_usage(userid, password, start_datetime, end_datetime)
+    render_output(water, mode, start_datetime, end_datetime)
 
 if __name__ == "__main__":
 
-    arguments = docopt(__doc__)
-    
-    if arguments['--version']:
-        print "%s v. %s" % (__title__, __version__)
-        sys.exit()
-    
-    mode = output_mode(arguments)
-    start_datetime, end_datetime = init(arguments)
-    userid, password = get_credentials()
+    # USERID = "[SF WATER USERNAME]"
+    # PASSWORD = "[SF WATER PASSWORD]"
 
-    try:
-        water = water_usage(userid, password, start_datetime, end_datetime)
-    except ValueError:
-        loginerror()
-    else:
-        output(water, mode, start_datetime, end_datetime)
-
-
-
-
+    ARGUMENTS = docopt(__doc__)
+    return_version(ARGUMENTS)
+    main(ARGUMENTS)
