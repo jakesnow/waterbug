@@ -46,6 +46,7 @@ __author__ = 'Jake Snow'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2016 Jacob A. Snow'
 
+
 def get_credentials():
     '''
     If credentials are hard-coded constants, return them.  Otherwise
@@ -61,16 +62,19 @@ def get_credentials():
         passw = getpass.getpass("Please enter your SF Water password: ")
     return (login, passw)
 
+
 def loginerror():
     '''Print formatted login-error notification'''
     print "\n====================================="
     print "Your login or password was incorrect."
     print "====================================="
 
+
 def datetime_to_day(date_time):
     '''convert datetime object to string of the form "MM/DD/YYYY'''
     day = "%s/%s/%s" % (date_time.month, date_time.day, date_time.year)
     return day
+
 
 def fix_future_date(date_time):
     '''If date_time is in the future, move it to previous year.'''
@@ -79,6 +83,7 @@ def fix_future_date(date_time):
         return previous_year
     else:
         return date_time
+
 
 def output_mode(args):
     '''Identify login mode from args dictionary.'''
@@ -89,10 +94,12 @@ def output_mode(args):
     else:
         return "text"
 
+
 def terminal_output_header(start, end):
     '''Print header for terminal output.'''
     print "\nWater Use in Gallons, %s through %s:" % (start, end)
     print "======================================================"
+
 
 def render_output(water_use, output, start_date, end_date):
     '''Output to terminal (text or termgraph) or xls depending on output mode.'''
@@ -112,6 +119,7 @@ def render_output(water_use, output, start_date, end_date):
         write_xls = open("water_usage.xls", 'wb')
         write_xls.write(xls_file.encode("utf-8"))
         write_xls.close()
+
 
 def get_daterange(arguments):
     '''
@@ -141,6 +149,7 @@ def get_daterange(arguments):
 
     return (start_datetime, end_datetime)
 
+
 def water_usage(userid, password, start_datetime, end_datetime):
     '''
     Pull water usage from sfwater.org and return list of tab-separated values.
@@ -158,16 +167,17 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
         # Extract values from page that must be in the login POST
         viewstate_login = soup.find(id="__VIEWSTATE")['value']
-        viewstategenerator_login = soup.find(id="__VIEWSTATEGENERATOR")['value']
+        viewstategenerator_login = soup.find(
+            id="__VIEWSTATEGENERATOR")['value']
         eventvalidation_login = soup.find(id="__EVENTVALIDATION")['value']
 
         # Populate login POST
-        login_data = {"__VIEWSTATE":viewstate_login,
-                      "__VIEWSTATEGENERATOR":viewstategenerator_login,
-                      "__EVENTVALIDATION":eventvalidation_login,
-                      "tb_USER_ID":userid,
-                      "tb_USER_PSWD":password,
-                      "btn_SIGN_IN_BUTTON":"Sign in"}
+        login_data = {"__VIEWSTATE": viewstate_login,
+                      "__VIEWSTATEGENERATOR": viewstategenerator_login,
+                      "__EVENTVALIDATION": eventvalidation_login,
+                      "tb_USER_ID": userid,
+                      "tb_USER_PSWD": password,
+                      "btn_SIGN_IN_BUTTON": "Sign in"}
 
         # Submit login
         login = session.post(waterbill_url, data=login_data)
@@ -186,28 +196,29 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
         # Extract values from page that must be in the data-request POST
         viewstate_data = newsoup.find(id="__VIEWSTATE")['value']
-        viewstategenerator_data = newsoup.find(id="__VIEWSTATEGENERATOR")['value']
+        viewstategenerator_data = newsoup.find(
+            id="__VIEWSTATEGENERATOR")['value']
         eventvalidation_data = newsoup.find(id="__EVENTVALIDATION")['value']
         tsm_hiddenfield = newsoup.find(id="_TSM_HiddenField_")['value']
 
         xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
 
         # Populate data request POST
-        xls_data = {"__VIEWSTATE":viewstate_data,
-                    "__VIEWSTATEGENERATOR":viewstategenerator_data,
-                    "__EVENTVALIDATION":eventvalidation_data,
-                    "_TSM_HiddenField_":tsm_hiddenfield,
-                    "SD":start_day,
-                    "tb_DAILY_USE":"Daily Use",
-                    "dl_UOM":"GALLONS",
-                    "img_EXCEL_DOWNLOAD_IMAGE.x":"12",
-                    "img_EXCEL_DOWNLOAD_IMAGE.y":"11",
-                    "ED":end_day}
+        xls_data = {"__VIEWSTATE": viewstate_data,
+                    "__VIEWSTATEGENERATOR": viewstategenerator_data,
+                    "__EVENTVALIDATION": eventvalidation_data,
+                    "_TSM_HiddenField_": tsm_hiddenfield,
+                    "SD": start_day,
+                    "tb_DAILY_USE": "Daily Use",
+                    "dl_UOM": "GALLONS",
+                    "img_EXCEL_DOWNLOAD_IMAGE.x": "12",
+                    "img_EXCEL_DOWNLOAD_IMAGE.y": "11",
+                    "ED": end_day}
 
         xls_file = session.post(
             xls_url,
             data=xls_data,
-            headers={"Accept":"text/html,application/xhtml+xml,application\
+            headers={"Accept": "text/html,application/xhtml+xml,application\
                         /xml;q=0.9,image/webp,*/*;q=0.8"})
 
         usage_list = xls_file.content.split("\n")
@@ -216,11 +227,13 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
         return usage_list
 
+
 def return_version(args):
     '''If user requests version, return version and exit.'''
     if args['--version']:
         print "%s v. %s" % (__title__, __version__)
         sys.exit()
+
 
 def main(args):
     '''Collect and return requested water-usage data.'''
