@@ -28,12 +28,12 @@ Options:
 '''
 import sys
 import getpass
+from datetime import datetime, timedelta
 
 import requests
 from bs4 import BeautifulSoup
 
-from datetime import datetime, timedelta
-from dateutil.parser import *
+from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from docopt import docopt
@@ -149,12 +149,12 @@ def water_usage(userid, password, start_datetime, end_datetime):
     start_day = datetime_to_day(start_datetime)
     end_day = datetime_to_day(end_datetime)
 
-    with requests.Session() as c:
+    with requests.Session() as session:
 
         waterbill_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
-        r = c.get("https://myaccount.sfwater.org")
+        response = session.get("https://myaccount.sfwater.org")
 
-        soup = BeautifulSoup(r.content, "html.parser")
+        soup = BeautifulSoup(response.content, "html.parser")
 
         # Extract values from page that must be in the login POST
         viewstate_login = soup.find(id="__VIEWSTATE")['value']
@@ -170,7 +170,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
                       "btn_SIGN_IN_BUTTON":"Sign in"}
 
         # Submit login
-        login = c.post(waterbill_url, data=login_data)
+        login = session.post(waterbill_url, data=login_data)
 
         # Raise exception if login credentals fail
         if "<h2>Sign In Failure</h2>" in login.content:
@@ -178,8 +178,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
             sys.exit()
 
         account_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ"
-
-        my_account = c.get(account_url)
+        my_account = session.get(account_url)
 
         # print my_account.content
 
@@ -205,14 +204,13 @@ def water_usage(userid, password, start_datetime, end_datetime):
                     "img_EXCEL_DOWNLOAD_IMAGE.y":"11",
                     "ED":end_day}
 
-        xls_file = c.post(
+        xls_file = session.post(
             xls_url,
             data=xls_data,
             headers={"Accept":"text/html,application/xhtml+xml,application\
                         /xml;q=0.9,image/webp,*/*;q=0.8"})
 
         usage_list = xls_file.content.split("\n")
-
         # Pop off first line, reading: "Date   Consumption in GALLONS"
         usage_list.pop(0)
 
