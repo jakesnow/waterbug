@@ -150,6 +150,17 @@ def get_daterange(arguments):
     return (start_datetime, end_datetime)
 
 
+def field_value(soup, field_name):
+    '''return the value of field_name field in BeautifulSoup object soup.'''
+    return soup.find(id=field_name)['value']
+
+def sfwater_login_fail(login):
+    '''Raise exception if login credentals fail.'''
+    if "<h2>Sign In Failure</h2>" in login.content:
+        loginerror()
+        sys.exit()
+
+
 def water_usage(userid, password, start_datetime, end_datetime):
     '''
     Pull water usage from sfwater.org and return list of tab-separated values.
@@ -157,57 +168,36 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
     start_day = datetime_to_day(start_datetime)
     end_day = datetime_to_day(end_datetime)
+    waterbill_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
+    account_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ"
+    xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
 
     with requests.Session() as session:
 
-        waterbill_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
         response = session.get("https://myaccount.sfwater.org")
 
         soup = BeautifulSoup(response.content, "html.parser")
 
-        # Extract values from page that must be in the login POST
-        viewstate_login = soup.find(id="__VIEWSTATE")['value']
-        viewstategenerator_login = soup.find(
-            id="__VIEWSTATEGENERATOR")['value']
-        eventvalidation_login = soup.find(id="__EVENTVALIDATION")['value']
-
         # Populate login POST
-        login_data = {"__VIEWSTATE": viewstate_login,
-                      "__VIEWSTATEGENERATOR": viewstategenerator_login,
-                      "__EVENTVALIDATION": eventvalidation_login,
+        login_data = {"__VIEWSTATE": field_value(soup, "__VIEWSTATE"),
+                      "__VIEWSTATEGENERATOR": field_value(soup, "__VIEWSTATEGENERATOR"),
+                      "__EVENTVALIDATION": field_value(soup, "__EVENTVALIDATION"),
                       "tb_USER_ID": userid,
                       "tb_USER_PSWD": password,
                       "btn_SIGN_IN_BUTTON": "Sign in"}
 
         # Submit login
         login = session.post(waterbill_url, data=login_data)
-
-        # Raise exception if login credentals fail
-        if "<h2>Sign In Failure</h2>" in login.content:
-            loginerror()
-            sys.exit()
-
-        account_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ"
-        my_account = session.get(account_url)
-
+        sfwater_login_fail(login)
         # print my_account.content
 
-        newsoup = BeautifulSoup(my_account.content, "html.parser")
-
-        # Extract values from page that must be in the data-request POST
-        viewstate_data = newsoup.find(id="__VIEWSTATE")['value']
-        viewstategenerator_data = newsoup.find(
-            id="__VIEWSTATEGENERATOR")['value']
-        eventvalidation_data = newsoup.find(id="__EVENTVALIDATION")['value']
-        tsm_hiddenfield = newsoup.find(id="_TSM_HiddenField_")['value']
-
-        xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
+        newsoup = BeautifulSoup(session.get(account_url).content, "html.parser")
 
         # Populate data request POST
-        xls_data = {"__VIEWSTATE": viewstate_data,
-                    "__VIEWSTATEGENERATOR": viewstategenerator_data,
-                    "__EVENTVALIDATION": eventvalidation_data,
-                    "_TSM_HiddenField_": tsm_hiddenfield,
+        xls_data = {"__VIEWSTATE": field_value(newsoup, "__VIEWSTATE"),
+                    "__VIEWSTATEGENERATOR": field_value(newsoup, "__VIEWSTATEGENERATOR"),
+                    "__EVENTVALIDATION": field_value(newsoup, "__EVENTVALIDATION"),
+                    "_TSM_HiddenField_": field_value(newsoup, "_TSM_HiddenField_"),
                     "SD": start_day,
                     "tb_DAILY_USE": "Daily Use",
                     "dl_UOM": "GALLONS",
