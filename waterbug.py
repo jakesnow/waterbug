@@ -155,7 +155,10 @@ def field_value(soup, field_name):
     return soup.find(id=field_name)['value']
 
 def sfwater_login_fail(login):
-    '''Raise exception if login credentals fail.'''
+    '''
+    Raise exception if login credentals fail.
+    Login variable is requests response object.
+    '''
     if "<h2>Sign In Failure</h2>" in login.content:
         loginerror()
         sys.exit()
@@ -168,6 +171,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
 
     start_day = datetime_to_day(start_datetime)
     end_day = datetime_to_day(end_datetime)
+
     waterbill_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV1ZFb1Evbm1zMEpWSzRCMmYrcEZtT05zMkpJMHdEM2VqQnNPTlpEUjFlR2c9PQ==ZZZ"
     account_url = "https://myaccount.sfwater.org/~~~QUFBQUFBV3RCUW5sMFltOXVXNGtBUVBKVVhRQkRxVGFmU2JRVGVBbGJ0Z2tWWkNRRFE9PQ==ZZZ"
     xls_url = "https://myaccount.sfwater.org/~~~QUFBQUFBVzA4aEozRlhFbUNRa1VITUYrdE9lOEtFSnRCMFN1U1NKK25wcTg4TGluOHc9PQ==ZZZ"
@@ -191,7 +195,9 @@ def water_usage(userid, password, start_datetime, end_datetime):
         sfwater_login_fail(login)
         # print my_account.content
 
-        newsoup = BeautifulSoup(session.get(account_url).content, "html.parser")
+        myaccount = session.get(account_url)
+
+        newsoup = BeautifulSoup(myaccount.content, "html.parser")
 
         # Populate data request POST
         xls_data = {"__VIEWSTATE": field_value(newsoup, "__VIEWSTATE"),
@@ -234,6 +240,20 @@ def main(args):
 
     water = water_usage(userid, password, start_datetime, end_datetime)
     render_output(water, mode, start_datetime, end_datetime)
+    total_days = len(water) - 1
+    total_gallons = 0
+    for usage_days in water:
+        list_pair = usage_days.split('\t')
+        try:
+            gallons = list_pair[1]
+        except IndexError: # no water value
+            gallons = 0
+        total_gallons += int(gallons)
+
+    avg_gallons = total_gallons/total_days
+    print "Total Gallons: %s" % total_gallons
+    print "Average Gallons: %s" % avg_gallons
+    # print "Total Days: %s" % total_days
 
 if __name__ == "__main__":
 
