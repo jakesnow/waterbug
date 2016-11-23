@@ -39,6 +39,7 @@ from dateutil.relativedelta import relativedelta
 from docopt import docopt
 
 from termgraph import main as graph
+from credentials import USERID, PASSWORD
 
 __title__ = 'waterbug'
 __version__ = '0.1'
@@ -214,8 +215,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
         xls_file = session.post(
             xls_url,
             data=xls_data,
-            headers={"Accept": "text/html,application/xhtml+xml,application\
-                        /xml;q=0.9,image/webp,*/*;q=0.8"})
+            headers={"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"})
 
         usage_list = xls_file.content.split("\n")
         # Pop off first line, reading: "Date   Consumption in GALLONS"
@@ -256,9 +256,6 @@ def main(args):
     # print "Total Days: %s" % total_days
 
 if __name__ == "__main__":
-
-    # USERID = "[SF WATER USERNAME]"
-    # PASSWORD = "[SF WATER PASSWORD]"
 
     ARGUMENTS = docopt(__doc__)
     return_version(ARGUMENTS)
