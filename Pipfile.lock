@@ -1,0 +1,46 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "7f3a2d9091407263d360c38a7aefd5cf4da079b10c1806608bd2e9a1d9212a5b"
+        },
+        "host-environment-markers": {
+            "implementation_name": "cpython",
+            "implementation_version": "3.6.2",
+            "os_name": "posix",
+            "platform_machine": "x86_64",
+            "platform_python_implementation": "CPython",
+            "platform_release": "16.7.0",
+            "platform_system": "Darwin",
+            "platform_version": "Darwin Kernel Version 16.7.0: Thu Jun 15 17:36:27 PDT 2017; root:xnu-3789.70.16~2/RELEASE_X86_64",
+            "python_full_version": "3.6.2",
+            "python_version": "3.6",
+            "sys_platform": "darwin"
+        },
+        "pipfile-spec": 1,
+        "requires": {},
+        "sources": [
+            {
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "beautifulsoup4": {
+            "version": "==4.4.1"
+        },
+        "docopt": {
+            "version": "==0.6.2"
+        },
+        "python-dateutil": {
+            "version": "==2.4.2"
+        },
+        "requests": {
+            "version": "==2.9.1"
+        },
+        "six": {
+            "version": "==1.11.0"
+        }
+    },
+    "develop": {}
+}

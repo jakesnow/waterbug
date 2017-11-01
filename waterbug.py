@@ -66,9 +66,9 @@ def get_credentials():
 
 def loginerror():
     '''Print formatted login-error notification'''
-    print "\n====================================="
-    print "Your login or password was incorrect."
-    print "====================================="
+    print("\n=====================================")
+    print("Your login or password was incorrect.")
+    print("=====================================")
 
 
 def datetime_to_day(date_time):
@@ -98,8 +98,8 @@ def output_mode(args):
 
 def terminal_output_header(start, end):
     '''Print header for terminal output.'''
-    print "\nWater Use in Gallons, %s through %s:" % (start, end)
-    print "======================================================"
+    print("\nWater Use in Gallons, %s through %s:" % (start, end))
+    print("======================================================")
 
 
 def render_output(water_use, output, start_date, end_date):
@@ -109,7 +109,7 @@ def render_output(water_use, output, start_date, end_date):
     if output == "text":
         terminal_output_header(start, end)
         for day_use_pair in water_use:
-            print day_use_pair
+            print(day_use_pair)
     elif output == "graph":
         terminal_output_header(start, end)
         graph(water_use)
@@ -160,7 +160,7 @@ def sfwater_login_fail(login):
     Raise exception if login credentals fail.
     Login variable is requests response object.
     '''
-    if "<h2>Sign In Failure</h2>" in login.content:
+    if u"<h2>Sign In Failure</h2>" in login.content.decode('utf-8'):
         loginerror()
         sys.exit()
 
@@ -194,7 +194,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
         # Submit login
         login = session.post(waterbill_url, data=login_data)
         sfwater_login_fail(login)
-        # print my_account.content
+        # print(my_account.content)
 
         myaccount = session.get(account_url)
 
@@ -217,7 +217,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
             data=xls_data,
             headers={"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"})
 
-        usage_list = xls_file.content.split("\n")
+        usage_list = xls_file.content.decode('utf-8').split(u"\n")
         # Pop off first line, reading: "Date   Consumption in GALLONS"
         usage_list.pop(0)
 
@@ -227,7 +227,7 @@ def water_usage(userid, password, start_datetime, end_datetime):
 def return_version(args):
     '''If user requests version, return version and exit.'''
     if args['--version']:
-        print "%s v. %s" % (__title__, __version__)
+        print("%s v. %s" % (__title__, __version__))
         sys.exit()
 
 
@@ -243,7 +243,7 @@ def main(args):
     total_days = len(water) - 1
     total_gallons = 0
     for usage_days in water:
-        list_pair = usage_days.split('\t')
+        list_pair = usage_days.split(u'\t')
         try:
             gallons = list_pair[1]
         except IndexError: # no water value
@@ -251,9 +251,9 @@ def main(args):
         total_gallons += int(gallons)
 
     avg_gallons = total_gallons/total_days
-    print "Total Gallons: %s" % total_gallons
-    print "Average Gallons: %s" % avg_gallons
-    # print "Total Days: %s" % total_days
+    print("Total Gallons: %s" % total_gallons)
+    print("Average Gallons: %s" % avg_gallons)
+    # print("Total Days: %s" % total_days)
 
 if __name__ == "__main__":
 
